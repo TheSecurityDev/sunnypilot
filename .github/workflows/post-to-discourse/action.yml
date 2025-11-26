@@ -41,21 +41,27 @@ runs:
     - name: Post to Discourse
       id: post
       shell: bash
+      env:
+        OWNER: ${{ github.repository_owner }}
       run: |
+        if [ "$OWNER" != "sunnypilot" ]; then
+          echo "Skipped: Running on a forked repository."
+          exit 0
+        fi
         # Validate inputs
         if [ -z "${{ inputs.topic-id }}" ] && ([ -z "${{ inputs.category-id }}" ] || [ -z "${{ inputs.title }}" ]); then
           echo "❌ Error: Must provide either topic-id OR both category-id and title"
           exit 1
         fi
-        
+
         if [ -n "${{ inputs.topic-id }}" ] && ([ -n "${{ inputs.category-id }}" ] || [ -n "${{ inputs.title }}" ]); then
           echo "⚠️  Warning: Both topic-id and category-id/title provided. Will post to existing topic."
         fi
-        
+
         # Determine if creating new topic or posting to existing
         if [ -n "${{ inputs.topic-id }}" ]; then
           echo "📝 Posting to existing topic ID: ${{ inputs.topic-id }}"
-        
+
           # Create JSON payload for posting to existing topic
           PAYLOAD=$(jq -n \
             --arg content '${{ inputs.message }}' \
@@ -63,7 +69,7 @@ runs:
             '{topic_id: $topic_id, raw: $content}')
         else
           echo "✨ Creating new topic: ${{ inputs.title }}"
-        
+
           # Create JSON payload for new topic
           PAYLOAD=$(jq -n \
             --arg content '${{ inputs.message }}' \
@@ -71,7 +77,7 @@ runs:
             --arg category "${{ inputs.category-id }}" \
             '{title: $title, category: ($category | tonumber), raw: $content}')
         fi
-        
+
         # Post to Discourse
         RESPONSE=$(curl -s -w "\n%{http_code}" \
           -X POST "${{ inputs.discourse-url }}/posts.json" \
@@ -79,21 +85,21 @@ runs:
           -H "Api-Key: ${{ inputs.api-key }}" \
           -H "Api-Username: ${{ inputs.api-username }}" \
           -d "$PAYLOAD")
-        
+
         HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
         BODY=$(echo "$RESPONSE" | sed '$d')
-        
+
         if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
           echo "✅ Successfully posted to Discourse!"
-        
+
           POST_NUMBER=$(echo "$BODY" | jq -r '.post_number // "unknown"')
           TOPIC_ID=$(echo "$BODY" | jq -r '.topic_id // "${{ inputs.topic-id }}"')
           POST_URL="${{ inputs.discourse-url }}/t/${TOPIC_ID}/${POST_NUMBER}"
-        
+
           echo "post_number=${POST_NUMBER}" >> $GITHUB_OUTPUT
           echo "post_url=${POST_URL}" >> $GITHUB_OUTPUT
           echo "topic_id=${TOPIC_ID}" >> $GITHUB_OUTPUT
-        
+
           echo "Topic ID: ${TOPIC_ID}"
           echo "Post number: ${POST_NUMBER}"
           echo "URL: ${POST_URL}"

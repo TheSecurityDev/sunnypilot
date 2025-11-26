@@ -6,6 +6,7 @@ on:
 jobs:
   test-discourse-post:
     runs-on: ubuntu-latest
+    if: github.repository_owner == 'sunnypilot'
     steps:
       - uses: actions/checkout@v4
 
@@ -18,28 +19,28 @@ jobs:
           topic-id: ${{ vars.DISCOURSE_UPDATES_TOPIC_ID }}
           message: |
             ## 🧪 Test Post from GitHub Actions
-            
+
             **This is a test post to verify Discourse integration**
-            
+
             - **Workflow**: ${{ github.workflow }}
             - **Run Number**: #${{ github.run_number }}
             - **Branch**: `${{ github.ref_name }}`
             - **Commit**: ${{ github.sha }}
             - **Actor**: @${{ github.actor }}
             - **Timestamp**: ${{ github.event.head_commit.timestamp }}
-            
+
             ---
-            
+
             ### Fake Build Info (for testing)
             - **Version**: 0.9.8-test
             - **Build**: #42
             - **Branch**: release-test
-            
+
             [View workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
-            
+
             *This is an automated test message. Drive safe! 🚗💨*
-      
-      
+
+
       - name: Create topic on Discourse
         uses: ./.github/workflows/post-to-discourse
         with:
@@ -51,25 +52,25 @@ jobs:
           title: "This is a test of a new topic instead of a reply"
           message: |
             ## 🧪 Test Post from GitHub Actions
-            
+
             **This is a test post to verify Discourse integration**
-            
+
             - **Workflow**: ${{ github.workflow }}
             - **Run Number**: #${{ github.run_number }}
             - **Branch**: `${{ github.ref_name }}`
             - **Commit**: ${{ github.sha }}
             - **Actor**: @${{ github.actor }}
             - **Timestamp**: ${{ github.event.head_commit.timestamp }}
-            
+
             ---
-            
+
             ### Fake Build Info (for testing)
             - **Version**: 0.9.8-test
             - **Build**: #42
             - **Branch**: release-test
-            
+
             [View workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
-            
+
             *This is an automated test message. Drive safe! 🚗💨*
       - name: Display results
         if: always()
